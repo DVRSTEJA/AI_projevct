@@ -83,11 +83,15 @@ class State:
     def step(self, act):
         return State(self.board.step(act), self.moves+[act], self.pathcost+1)
     def successors(self):
-        pass # TODO: return a frozenset of all successor states
+        successor_states = []
+        for action in self.board.actions():
+            successor_states.append(self.step(action))
+        return successor_states
     def goal(self):
         return self.board.goal()
     def eval(self):
-        return 0
+        return self.pathcost + manhattan_distance(self.board)
+
 
 # Potentially useful helper for generating randomly permuted boards using State.step
 def randomboard(W, steps = 50, seed = 0):
@@ -100,6 +104,16 @@ def randomboard(W, steps = 50, seed = 0):
         st = st.step(randact)
     return st.board
 
+def manhattan_distance(board):
+    distance = 0
+    for i in range(board.W):
+        for j in range(board.W):
+            value = board.data[i][j]
+            if value != 0:
+                target_row, target_col = divmod(value - 1, board.W)
+                distance += abs(i - target_row) + abs(j - target_col)
+
+    return distance    
 
 def solve(startboard):
     # Create a priority queue for the frontier set
@@ -111,12 +125,21 @@ def solve(startboard):
     frontier.put(start)
 
     # Loop until the frontier is exhausted
-    while frontier:
-        # TODO: Pop highest priority (least) element
-        #       Check if it's a solution, or has been already seen
-        #       If neither, add all its successors to the frontier
-        pass
+    while not frontier.empty():
+        current_state = frontier.get()
+
+        if current_state.goal():
+            return current_state
+
+        if current_state.board in seenset:
+            continue
+
+        seenset.add(current_state.board)
+
+        for action in current_state.board.actions():
+            next_state = current_state.step(action)
+            if next_state.board not in seenset:
+                frontier.put(next_state)
+
     # Oops, no solution found
     return None
-        
-        
